@@ -24,6 +24,7 @@ CPU_random_choice_if_hit = ["",[]]
 HIT = False
 # Μία λίστα με τις συντεταγμένες των πλοίων του εχθρού
 enemy_battleships = []
+enemy_battleships_adjacent = []
 # Λίστα με τα κουμπιά που αλλάζουν ανάλογα με τις επιλογές του παίχτη
 enemy_right_wrong_buttons = [[], []]
 # Λίστα με τις ταμπέλες που αλλάζουν ανάλογα με τις επιλογές του Υπολογιστή
@@ -408,20 +409,81 @@ def start_game():
             if not y:
                 break
         enemy_ship = [coords]
+        enemy_ship_adjacent = []
         random_x = random.choice(x)
         random_y = random.choice(y)
         for i in range(ship-1):
             enemy_ship += [[coords[0]+(1+i)*random_x, coords[1]+(1+i)*random_y]]
+        # Προστίθενται επιπλέον συντεταγμένες για να περιορίσουν τον χώρο γύρο απο τα εχθρικά πλοία
+        if direction == "x":
+            if random_x > 0:
+                if coords[0] > 0:
+                    enemy_ship_adjacent += [[coords[0]-1, coords[1]]]
+                if enemy_ship[ship-1][0] < 9:
+                    enemy_ship_adjacent += [[enemy_ship[ship-1][0] + 1, enemy_ship[ship-1][1]]]
+                if coords[1] > 0:
+                    for i in range(ship):
+                        enemy_ship_adjacent += [[enemy_ship[i][0], enemy_ship[i][1]-1]]
+                if coords[1] < 10:
+                    for i in range(ship):
+                        enemy_ship_adjacent += [[enemy_ship[i][0], enemy_ship[i][1]+1]]
+            else:
+                if coords[0] < 9:
+                    enemy_ship_adjacent += [[coords[0]+1, coords[1]]]
+                if enemy_ship[ship-1][0] > 0:
+                    enemy_ship_adjacent += [[enemy_ship[ship-1][0] - 1, enemy_ship[ship-1][1]]]
+                if coords[1] > 0:
+                    for i in range(ship):
+                        enemy_ship_adjacent += [[enemy_ship[i][0], enemy_ship[i][1]-1]]
+                if coords[1] < 10:
+                    for i in range(ship):
+                        enemy_ship_adjacent += [[enemy_ship[i][0], enemy_ship[i][1]+1]]
+        else:
+            if random_y > 0:
+                if coords[1] > 0:
+                    enemy_ship_adjacent += [[coords[0], coords[1]-1]]
+                if enemy_ship[ship-1][0] < 10:
+                    enemy_ship_adjacent += [[enemy_ship[ship-1][0], enemy_ship[ship-1][1]+1]]
+                if coords[0] > 0:
+                    for i in range(ship):
+                        enemy_ship_adjacent += [[enemy_ship[i][0]-1, enemy_ship[i][1]]]
+                if coords[0] < 9:
+                    for i in range(ship):
+                        enemy_ship_adjacent += [[enemy_ship[i][0]+1, enemy_ship[i][1]]]
+            else:
+                if coords[1] < 10:
+                    enemy_ship_adjacent += [[coords[0], coords[1]+1]]
+                if enemy_ship[ship-1][0] > 0:
+                    enemy_ship_adjacent += [[enemy_ship[ship-1][0], enemy_ship[ship-1][1]-1]]
+                if coords[0] > 0:
+                    for i in range(ship):
+                        enemy_ship_adjacent += [[enemy_ship[i][0]-1, enemy_ship[i][1]]]
+                if coords[0] < 9:
+                    for i in range(ship):
+                        enemy_ship_adjacent += [[enemy_ship[i][0]+1, enemy_ship[i][1]]]
         # Περιορισμοί σε περίπτωση επαφής με άλλο πλοίο
-        if enemy_battleships:
-            for enemy_battleship_coords in enemy_battleships:
-                for enemy_ship_coords in enemy_ship:
-                    if enemy_ship_coords == enemy_battleship_coords:
-                        break
-        for i in enemy_ship:
-            enemy_battleships.append(i)
+        breaker = True
 
-        ship += 1
+        # Βοηθητική λίστα που περιλαμβάνει τις συντεταγμένες εχθρικού πλοίου καθώς και τις συντεταγμένες
+        # γύρω απο αυτό
+        enemy_total = enemy_ship + enemy_ship_adjacent
+
+        if enemy_battleships:
+            # Βοηθητική λίστα που περιλαμβάνει τις συνολικές συντεταγμένες εχθρικών πλοίων καθώς και
+            # τις συνολικές συντεταγμένες γύρω απο αυτά
+            enemy_battleships_total = enemy_battleships + enemy_battleships_adjacent
+            for enemy_battleship_coords in enemy_battleships_total:
+                for enemy_ship_coords in enemy_total:
+                    if enemy_ship_coords == enemy_battleship_coords and breaker:
+                        CPU_random_choice.append(coords)
+                        breaker = False
+        if breaker:
+            for i in enemy_ship:
+                enemy_battleships.append(i)
+            for i in enemy_ship_adjacent:
+                enemy_battleships_adjacent.append(i)
+
+            ship += 1
 
     # Ανακατασκευή της λίστας CPU_random_choice
     CPU_random_choice = []
@@ -440,7 +502,7 @@ def center_window(window):
     """
 
     window.geometry("")
-    window.update()
+    window.update_idletasks()
     x = int(window.winfo_screenwidth()/2 - window.winfo_width()/2)
     y = int(window.winfo_screenheight() / 2 - window.winfo_height() / 2)
     window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x}+{y}")
@@ -468,6 +530,7 @@ def restart_game():
     enemy_right_wrong_buttons[0].clear()
     enemy_right_wrong_buttons[1].clear()
     enemy_battleships.clear()
+    enemy_battleships_adjacent.clear()
     CPU_random_choice_if_hit[0] = ""
     CPU_random_choice_if_hit[1].clear()
     PLAYER_SCORE = 0

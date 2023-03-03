@@ -446,6 +446,77 @@ def center_window(window):
     window.geometry(f"{window.winfo_width()}x{window.winfo_height()}+{x}+{y}")
 
 
+def restart_game():
+    """Μία συνάρτηση η οποία τα καταστρέφει όλα και ξανά ξεκινάει το παιχνίδι απο την αρχή"""
+
+    global PC_SCORE, PLAYER_SCORE, HIT, battleships
+
+    # Απο εδώ και κάτω γίνεται η αρχικοποίηση όλων των μεταβλητών για την επανεκκίνηση
+    # του παιχνιδιού
+    CPU_random_choice.clear()
+    for y in range(11):
+        for x in range(10):
+            CPU_random_choice.append([x, y])
+
+    battleships = {"aircraft_carrier": [0, 5],
+                   "battleship": [0, 4],
+                   "cruiser": [0, 3],
+                   "destroyer": [0, 2]}
+
+    friendly_right_wrong_labels[0].clear()
+    friendly_right_wrong_labels[1].clear()
+    enemy_right_wrong_buttons[0].clear()
+    enemy_right_wrong_buttons[1].clear()
+    enemy_battleships.clear()
+    CPU_random_choice_if_hit[0] = ""
+    CPU_random_choice_if_hit[1].clear()
+    PLAYER_SCORE = 0
+    PC_SCORE = 0
+    HIT = False
+
+    for widget in window.winfo_children():
+        widget.destroy()
+
+    # All widgets for the give player Name
+    player_name_label = Label(window,
+                              text="Παρακαλώ δώστε το όνομά σας:",
+                              font=("Comic Sans MS", 20, "bold"))
+    player_name_box = Entry(window, name="player_name_box",
+                            width=20,
+                            font=("Comic Sans MS", 20),
+                            justify=CENTER)
+    player_name_button = Button(window,
+                                text="Νέο Παιχνίδι",
+                                font=("Comic Sans MS", 14, "bold"),
+                                command=lambda: new_game(window, True, True))
+
+    player_name_label.pack()
+    player_name_box.pack()
+    player_name_button.pack()
+    center_window(window)
+
+    # Προσθέτει τη δυνατότητα καταχώρησης ονόματος με το Enter
+    window.bind("<Return>", lambda event: new_game(window, True, True))
+
+
+def exit_game():
+    """Συνάρτηση με την οποία τελειώνει το παιχνίδι"""
+
+    for widget in window.winfo_children():
+        widget.destroy()
+
+    Label(window,
+          text="Ευχαριστούμε που παίξατε το παιχνίδι μας!!!",
+          font=("Comic Sans MS", 20, "bold")).pack()
+
+    Button(window,
+           text="Έξοδος",
+           font=("Comic Sans MS", 14, "bold"),
+           command=window.destroy).pack()
+
+    center_window(window)
+
+
 def new_game(window, entry_box, start_frame):
     """
     Έναρξη νέου παιχνιδιού.
@@ -463,8 +534,7 @@ def new_game(window, entry_box, start_frame):
 
     global PLAYER_NAME, PLAYER_SCORE, PC_SCORE
     if entry_box:
-        PLAYER_NAME = ""
-        PLAYER_NAME = player_name_box.get()
+        PLAYER_NAME = window.nametowidget("player_name_box").get()
 
     def enemy_buttons(x, y):
         """Συνάρτηση η οποία δέχεται τη θέση του κάθε κουμπιού
@@ -586,10 +656,10 @@ def new_game(window, entry_box, start_frame):
     # Τοποθέτηση κουμπιών στη δομή start_stop
     # Κουμπί για πιθανή έναρξη νέου παιχνιδιού
     Button(frame_start_stop, text="Νέο Παιχνίδι",
-           font=("Comic Sans MS", 15)).grid(row=0, column=0, padx=15)
+           font=("Comic Sans MS", 15), command=restart_game).grid(row=0, column=0, padx=15)
     # Κουμπί για πιθανή έξοδος απο το Παιχνίδι
     Button(frame_start_stop, text="Έξοδος",
-           font=("Comic Sans MS", 15)).grid(row=0, column=1, padx=15)
+           font=("Comic Sans MS", 15), command=exit_game).grid(row=0, column=1, padx=15)
 
     # Τοποθέτηση κουμπιών στη δομή ship_input
     # Κουμπί για προσθήκη Πλοίου
@@ -693,7 +763,7 @@ window.resizable(False, False)
 player_name_label = Label(window,
                           text="Παρακαλώ δώστε το όνομά σας:",
                           font=("Comic Sans MS", 20, "bold"))
-player_name_box = Entry(window,
+player_name_box = Entry(window, name="player_name_box",
                         width=20,
                         font=("Comic Sans MS", 20),
                         justify=CENTER)

@@ -8,6 +8,7 @@ random.seed(time.time())
 PLAYER_NAME = ""
 player_table = [[] for i in range(11)]
 enemy_table = [[] for i in range(11)]
+# Ένα λεξικό που περιέχει τα αντικείμενα και επίσης δείχνει αν υπάρχουν και το μέγεθός τους.
 battleships = {"aircraft_carrier": [0, 5],
                "battleship": [0, 4],
                "cruiser": [0, 3],
@@ -452,6 +453,9 @@ def new_game(window, entry_box, start_frame):
     Αυτή η συνάρτηση αποθηκεύει στην καθολική μεταβλητή το όνομα που θα δηλώσει ο
     παίχτης και έπειτα διαγράφει τα αντικείμενα του προηγούμενου παραθύρου
     προσθέτοντας τα νέα!
+    entry_box = True ή False για να αλλάξει το όνομα του παίχτη απο το αρχικό entry_box.
+    start_frame = True ή False για να εμφανίζεται ή όχι το frame που περιέχει τα κουμπιά εισαγωγής
+                  διαγραφής πλοίων και έναρξης παιχνιδιού.
     """
 
     player_table = [[] for i in range(11)]
@@ -462,35 +466,56 @@ def new_game(window, entry_box, start_frame):
         PLAYER_NAME = ""
         PLAYER_NAME = player_name_box.get()
 
-    # Συνάρτηση η οποία δέχεται τη θέση του κάθε κουμπιού και επιστρέφει διαφορετική εντολή για κάθε κουμπί
     def enemy_buttons(x, y):
-        # Συνάρτηση διαφορετική για κάθε κουμπί
+        """Συνάρτηση η οποία δέχεται τη θέση του κάθε κουμπιού
+           και επιστρέφει διαφορετική εντολή για κάθε κουμπί"""
         def enemy():
+            """
+            Συνάρτηση διαφορετική για κάθε κουμπί.
+
+            Η συνάρτηση αυτή ελέγχει αν ο χρήστης έχει πετύχει κάποιο πλοίο του εχθρού καθώς και το ίδιο
+            για τον εχθρό.
+            Ανάλογα με τις βολές του κάθε ένα διαμορφώνει και το παράθυρο του παιχνιδιού.
+            """
             global PLAYER_SCORE
             global PC_SCORE
             global HIT
             global CPU_random_choice_if_hit
 
-            label_1 = Label(window, text=f"Κάνατε πυρά στο σημείο ({x-1}, {y-1})")
-            label_2 = Label(window, text="Παρακαλώ περιμένετε")
+            ###label_1 = Label(window, text=f"Κάνατε πυρά στο σημείο ({x-1}, {y-1})")
+            ###label_2 = Label(window, text="Παρακαλώ περιμένετε")
+            # Εδώ γίνεται έλεγχος άν οι συντεταγμένες από το κουμπί που πάτησε ο χρήστης ανήκουν σε κάποιο
+            # από τα πλοία του εχθρού.
             if [x, y] in enemy_battleships:
                 enemy_right_wrong_buttons[0].append([x, y])
                 PLAYER_SCORE += 1
-                label_2.config(text="Πετύχατε κάποιο εχθρικό πλοίο!!")
+                ###label_2.config(text="Πετύχατε κάποιο εχθρικό πλοίο!!")
             else:
                 enemy_right_wrong_buttons[1].append([x, y])
-                label_2.config(text="Τα πυρά σας ήταν εκτός στόχου!!")
+                ###label_2.config(text="Τα πυρά σας ήταν εκτός στόχου!!")
 
+            # Εδώ γίνεται έλεγχος άν οι συντεταγμένες που επιλέγει ο εχθρός ανήκουν σε κάποιο
+            # από τα πλοία του παίχτη.
             if not HIT:
+                # Αν δεν έχει χτυπηθεί κάποιο πλοίο, ο υπολογιστής παίρνει γενικά τυχαίες συντεταγμένες
+                # από το ταμπλό
                 enemy_choice = random.choice(CPU_random_choice)
             else:
+                # Αν χτυπηθεί κάποιο πλοίο τότε ο υπολογιστής παίρνει τυχαία κάποια απο τις συντεταγμένες
+                # που αποτελούν τη θέση του πλοίου και του γύρο χώρου του
                 if CPU_random_choice_if_hit[1]:
                     enemy_choice = random.choice(CPU_random_choice_if_hit[1])
                 else:
+                    # Αν δεν υπάρχουν άλλες κοντινές συντεταγμένες να επιλέξει τότε γυρίζει πίσω στο
+                    # ταμπλό καταστρέφοντας το κατεστραμμένο πλοίο απο την προσωρινή μνήμη
                     HIT = False
                     del battleships[CPU_random_choice_if_hit[0]]
                     enemy_choice = random.choice(CPU_random_choice)
 
+            # Αν δεν έχει χτυπηθεί στην προηγούμενη βολή κάποιο πλοίο, τότε γίνεται έλεγχος αν η επιλεγμένες
+            # συντεταγμένες αντιστοιχούν σε κάποιο απο τα πλοία.
+            # Αν ανήκει, δημιουργείται μία προσωρινή λίστα συντεταγμένων κοντά στο χτυπημένο πλοίο απο τις
+            # οποίες θα επιλέγει ο υπολογιστής μέχρι να εξαντληθούν.
             if not HIT:
                 for ship in battleships.keys():
                     for ship_coords in battleships[ship][2].coordinates:
@@ -509,6 +534,8 @@ def new_game(window, entry_box, start_frame):
                             CPU_random_choice.remove(enemy_choice)
                             PC_SCORE += 1
                             break
+            # Αν έχει χτυπηθεί στην προηγούμενη βολή κάποιο πλοίο, τότε γίνεται έλεγχος αν η επιλεγμένες
+            # συντεταγμένες απο την προσωρινή μνήμη αντιστοιχούν σε κάποιο κομμάτι του πλοίου.
             else:
                 if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                     friendly_right_wrong_labels[0].append(enemy_choice)
@@ -520,6 +547,7 @@ def new_game(window, entry_box, start_frame):
                     CPU_random_choice.remove(enemy_choice)
                     CPU_random_choice_if_hit[1].remove(enemy_choice)
 
+            # Αν δέν βρεθεί συντεταγμένη πλοίου
             if not HIT:
                 CPU_random_choice.remove(enemy_choice)
                 friendly_right_wrong_labels[1].append(enemy_choice)
@@ -631,6 +659,9 @@ def new_game(window, entry_box, start_frame):
             ship_remove.config(state=NORMAL)
             break
 
+    # Στα επόμενα 3 ερωτήματα γίνεται έλεγχος τοποθετούνται στις κατάλληλες θέσεις στο πλέγμα, κουμπιά
+    # και ταμπέλες που υποδηλώνουν επιτυχή ή ανεπιτυχή βολή.
+    # Τα κουμπιά αυτά δημιουργούνται με κάθε κλήση της συνάρτησης
     if enemy_right_wrong_buttons[0]:
         for button in enemy_right_wrong_buttons[0]:
             enemy_table[button[1]][button[0]].config(state=DISABLED, bg="red")

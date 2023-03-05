@@ -499,7 +499,6 @@ def start_game():
     def difficulty(diff):
         global DIFFICULTY
         DIFFICULTY = diff
-        print(DIFFICULTY)
 
         return new_game(window, False, False)
 
@@ -598,6 +597,29 @@ def exit_game():
     center_window(window)
 
 
+def show_results():
+
+    def show_next():
+        for widget in window.winfo_children():
+            if widget != window.nametowidget("label_enemy"):
+                widget.destroy()
+        window.nametowidget("label_enemy").pack()
+        Button(window, text="Εντάξει",
+               command=lambda: new_game(window, False, False)).pack()
+
+        center_window(window)
+
+    for widget in window.winfo_children():
+        if widget != window.nametowidget("label_enemy") and widget != window.nametowidget("label_player_1") and widget != window.nametowidget("label_player_2"):
+            widget.destroy()
+    window.nametowidget("label_player_1").pack()
+    window.nametowidget("label_player_2").pack()
+    Button(window, text="Εντάξει",
+           command=show_next).pack()
+
+    center_window(window)
+
+
 def new_game(window, entry_box, start_frame):
     """
     Έναρξη νέου παιχνιδιού.
@@ -633,17 +655,25 @@ def new_game(window, entry_box, start_frame):
             global HIT
             global CPU_random_choice_if_hit
 
-            ###label_1 = Label(window, text=f"Κάνατε πυρά στο σημείο ({x-1}, {y-1})")
-            ###label_2 = Label(window, text="Παρακαλώ περιμένετε")
+            for widget in window.winfo_children():
+                widget.destroy()
+
+            label_player_1 = Label(window, text=f"Κάνατε πυρά στο σημείο ({x+1}, {y+1})",
+                                   name="label_player_1")
+            label_enemy = Label(window, text="Ο εχθρός πέτυχε κάποιο πλοίο σας!!",
+                                name="label_enemy")
+
             # Εδώ γίνεται έλεγχος άν οι συντεταγμένες από το κουμπί που πάτησε ο χρήστης ανήκουν σε κάποιο
             # από τα πλοία του εχθρού.
             if [x, y] in enemy_battleships:
                 enemy_right_wrong_buttons[0].append([x, y])
                 PLAYER_SCORE += 1
-                ###label_2.config(text="Πετύχατε κάποιο εχθρικό πλοίο!!")
+                label_player_2 = Label(text="Πετύχατε κάποιο εχθρικό πλοίο!!",
+                                       name="label_player_2")
             else:
                 enemy_right_wrong_buttons[1].append([x, y])
-                ###label_2.config(text="Τα πυρά σας ήταν εκτός στόχου!!")
+                label_player_2 = Label(text="Τα πυρά σας ήταν εκτός στόχου!!",
+                                       name="label_player_2")
 
             # Αλγόριθμος πυρών του εχθρού σε εύκολη δυσκολία
             if DIFFICULTY == "easy":
@@ -699,11 +729,13 @@ def new_game(window, entry_box, start_frame):
                         friendly_right_wrong_labels[1].append(enemy_choice)
                         CPU_random_choice.remove(enemy_choice)
                         CPU_random_choice_if_hit[1].remove(enemy_choice)
+                        label_enemy.config(text="Ο εχθρός αστόχησε!!")
 
                 # Αν δέν βρεθεί συντεταγμένη πλοίου
                 if not HIT:
                     CPU_random_choice.remove(enemy_choice)
                     friendly_right_wrong_labels[1].append(enemy_choice)
+                    label_enemy.config(text="Ο εχθρός αστόχησε!!")
             # Αλγόριθμος πυρών του εχθρού σε δύσκολη δυσκολία
             else:
                 # Εδώ γίνεται έλεγχος άν οι συντεταγμένες που επιλέγει ο εχθρός ανήκουν σε κάποιο
@@ -792,12 +824,14 @@ def new_game(window, entry_box, start_frame):
                                 CPU_smart_choice[0] = enemy_choice
                                 friendly_right_wrong_labels[0].append(enemy_choice)
                                 CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                PC_SCORE += 1
                                 break
                             else:
                                 CPU_smart_choice[1] = "right"
                                 if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                     friendly_right_wrong_labels[1].append(enemy_choice)
                                     CPU_random_choice.remove(enemy_choice)
+                                    label_enemy.config(text="Ο εχθρός αστόχησε!!")
                     elif CPU_smart_choice[1] == "right":
                         enemy_choice[0] += 1
                         for coords in CPU_random_choice_if_hit[1]:
@@ -806,12 +840,14 @@ def new_game(window, entry_box, start_frame):
                                 CPU_smart_choice[0] = enemy_choice
                                 friendly_right_wrong_labels[0].append(enemy_choice)
                                 CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                PC_SCORE += 1
                                 break
                             else:
                                 CPU_smart_choice[1] = "down"
                                 if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                     friendly_right_wrong_labels[1].append(enemy_choice)
                                     CPU_random_choice.remove(enemy_choice)
+                                    label_enemy.config(text="Ο εχθρός αστόχησε!!")
                     elif CPU_smart_choice[1] == "down":
                         enemy_choice[1] += 1
                         for coords in CPU_random_choice_if_hit[1]:
@@ -820,12 +856,14 @@ def new_game(window, entry_box, start_frame):
                                 CPU_smart_choice[0] = enemy_choice
                                 friendly_right_wrong_labels[0].append(enemy_choice)
                                 CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                PC_SCORE += 1
                                 break
                             else:
                                 CPU_smart_choice[1] = "left"
                                 if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                     friendly_right_wrong_labels[1].append(enemy_choice)
                                     CPU_random_choice.remove(enemy_choice)
+                                    label_enemy.config(text="Ο εχθρός αστόχησε!!")
                     elif CPU_smart_choice[1] == "left":
                         enemy_choice[0] -= 1
                         for coords in CPU_random_choice_if_hit[1]:
@@ -834,6 +872,7 @@ def new_game(window, entry_box, start_frame):
                                 CPU_smart_choice[0] = enemy_choice
                                 friendly_right_wrong_labels[0].append(enemy_choice)
                                 CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                PC_SCORE += 1
                                 break
                     elif CPU_smart_choice[1] == "y_up":
                         enemy_choice[1] -= 1
@@ -845,12 +884,14 @@ def new_game(window, entry_box, start_frame):
                                 friendly_right_wrong_labels[0].append(enemy_choice)
                                 CPU_random_choice_if_hit[1].remove(enemy_choice)
                                 CPU_smart_choice[0] = enemy_choice
+                                PC_SCORE += 1
                                 break
                             elif enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                 CPU_smart_choice[1] = "y_down"
                                 if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                     friendly_right_wrong_labels[1].append(enemy_choice)
                                     CPU_random_choice.remove(enemy_choice)
+                                    label_enemy.config(text="Ο εχθρός αστόχησε!!")
                     elif CPU_smart_choice[1] == "y_down":
                         enemy_choice[1] += 1
                         if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
@@ -861,12 +902,14 @@ def new_game(window, entry_box, start_frame):
                                 friendly_right_wrong_labels[0].append(enemy_choice)
                                 CPU_random_choice_if_hit[1].remove(enemy_choice)
                                 CPU_smart_choice[0] = enemy_choice
+                                PC_SCORE += 1
                                 break
                             elif enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                 CPU_smart_choice[1] = "y_up"
                                 if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                     friendly_right_wrong_labels[1].append(enemy_choice)
                                     CPU_random_choice.remove(enemy_choice)
+                                    label_enemy.config(text="Ο εχθρός αστόχησε!!")
                     elif CPU_smart_choice[1] == "x_right":
                         enemy_choice[0] += 1
                         if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
@@ -877,12 +920,14 @@ def new_game(window, entry_box, start_frame):
                                 friendly_right_wrong_labels[0].append(enemy_choice)
                                 CPU_random_choice_if_hit[1].remove(enemy_choice)
                                 CPU_smart_choice[0] = enemy_choice
+                                PC_SCORE += 1
                                 break
                             elif enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                 CPU_smart_choice[1] = "x_left"
                                 if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                     friendly_right_wrong_labels[1].append(enemy_choice)
                                     CPU_random_choice.remove(enemy_choice)
+                                    label_enemy.config(text="Ο εχθρός αστόχησε!!")
                     elif CPU_smart_choice[1] == "x_left":
                         enemy_choice[0] -= 1
                         if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
@@ -893,18 +938,43 @@ def new_game(window, entry_box, start_frame):
                                 friendly_right_wrong_labels[0].append(enemy_choice)
                                 CPU_random_choice_if_hit[1].remove(enemy_choice)
                                 CPU_smart_choice[0] = enemy_choice
+                                PC_SCORE += 1
                                 break
                             elif enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                 CPU_smart_choice[1] = "x_right"
                                 if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
                                     friendly_right_wrong_labels[1].append(enemy_choice)
                                     CPU_random_choice.remove(enemy_choice)
+                                    label_enemy.config(text="Ο εχθρός αστόχησε!!")
                 # Αν δέν βρεθεί συντεταγμένη πλοίου
                 if not HIT:
                     CPU_random_choice.remove(enemy_choice)
                     friendly_right_wrong_labels[1].append(enemy_choice)
+                    label_enemy.config(text="Ο εχθρός αστόχησε!!")
 
-            new_game(window, False, False)
+                if PC_SCORE < 14 and PLAYER_SCORE < 14:
+                    show_results()
+                elif PC_SCORE == 14:
+                    new_game(window, False, False)
+
+                    for widget in window.winfo_children():
+                        if widget != window.nametowidget("end_frame"):
+                            widget.destroy()
+                    Label(window, text="Ο Υπολογιστής κερδίζει!!",
+                          font=("Comic Sans MS", 20, "bold")).grid(row=0, column=0)
+                    window.nametowidget("end_frame").grid(row=2, column=0)
+                    center_window(window)
+
+                elif PLAYER_SCORE == 14:
+                    new_game(window, False, False)
+
+                    for widget in window.winfo_children():
+                        if widget != window.nametowidget("end_frame"):
+                            widget.destroy()
+                    Label(window, text="Ο παίχτης κερδίζει!!",
+                          font=("Comic Sans MS", 20, "bold")).grid(row=0, column=1)
+                    window.nametowidget("end_frame").grid(row=2, column=0, columnspan=3)
+                    center_window(window)
 
         return enemy
 
@@ -933,7 +1003,7 @@ def new_game(window, entry_box, start_frame):
     # Μία δομή για αποθήκευση των κουμπιών για τοποθέτηση πλοίων
     frame_ship_input = Frame(window, padx=15, pady=15, name="frame_ship_input")
     # Μία δομή για αποθήκευση των κουμπιών "Νέο Παιχνίδι" και "Έξοδος"
-    frame_start_stop = Frame(window)
+    frame_start_stop = Frame(window, name="end_frame")
 
     # Τοποθέτηση κουμπιών στη δομή start_stop
     # Κουμπί για πιθανή έναρξη νέου παιχνιδιού
@@ -1002,7 +1072,7 @@ def new_game(window, entry_box, start_frame):
     # Ενεργοποίηση ή Απενεργοποίηση κουμπιών όπου χρειάζεται
     for ship in battleships.keys():
         if battleships[ship][0] == 0:
-            ###start.config(state=DISABLED)
+            start.config(state=DISABLED)
             ship_add.config(state=NORMAL)
             break
 

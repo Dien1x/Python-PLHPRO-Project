@@ -20,7 +20,8 @@ for y in range(11):
     for x in range(10):
         CPU_random_choice.append([x, y])
 # Μία λίστα με συνένωση συντεταγμένων σε περίπτωση επιτυχής βολής
-CPU_random_choice_if_hit = ["",[]]
+CPU_random_choice_if_hit = ["", []]
+CPU_smart_choice = [[], ""]
 HIT = False
 # Μία λίστα με τις συντεταγμένες των πλοίων του εχθρού
 enemy_battleships = []
@@ -33,6 +34,7 @@ friendly_right_wrong_labels = [[], []]
 # Score counter
 PLAYER_SCORE = 0
 PC_SCORE = 0
+DIFFICULTY = "easy"
 
 
 class Ship:
@@ -491,7 +493,21 @@ def start_game():
         for x in range(10):
             CPU_random_choice.append([x, y])
 
-    new_game(window, False, False)
+    for widget in window.winfo_children():
+        widget.destroy()
+
+    def difficulty(diff):
+        global DIFFICULTY
+        DIFFICULTY = diff
+        print(DIFFICULTY)
+
+        return new_game(window, False, False)
+
+    Label(text="Παρακαλώ επιλέξτε δυσκολία!").grid(column=0, row=0, columnspan=3)
+    Button(text="Easy", command=lambda: difficulty("easy")).grid(column=0, row=2)
+    Button(text="Hard", command=lambda: difficulty("hard")).grid(column=2, row=2)
+
+    center_window(window)
 
 
 def center_window(window):
@@ -532,6 +548,8 @@ def restart_game():
     enemy_battleships.clear()
     enemy_battleships_adjacent.clear()
     CPU_random_choice_if_hit[0] = ""
+    CPU_smart_choice[0] = []
+    CPU_smart_choice[1] = ""
     CPU_random_choice_if_hit[1].clear()
     PLAYER_SCORE = 0
     PC_SCORE = 0
@@ -627,63 +645,264 @@ def new_game(window, entry_box, start_frame):
                 enemy_right_wrong_buttons[1].append([x, y])
                 ###label_2.config(text="Τα πυρά σας ήταν εκτός στόχου!!")
 
-            # Εδώ γίνεται έλεγχος άν οι συντεταγμένες που επιλέγει ο εχθρός ανήκουν σε κάποιο
-            # από τα πλοία του παίχτη.
-            if not HIT:
-                # Αν δεν έχει χτυπηθεί κάποιο πλοίο, ο υπολογιστής παίρνει γενικά τυχαίες συντεταγμένες
-                # από το ταμπλό
-                enemy_choice = random.choice(CPU_random_choice)
-            else:
-                # Αν χτυπηθεί κάποιο πλοίο τότε ο υπολογιστής παίρνει τυχαία κάποια απο τις συντεταγμένες
-                # που αποτελούν τη θέση του πλοίου και του γύρο χώρου του
-                if CPU_random_choice_if_hit[1]:
-                    enemy_choice = random.choice(CPU_random_choice_if_hit[1])
-                else:
-                    # Αν δεν υπάρχουν άλλες κοντινές συντεταγμένες να επιλέξει τότε γυρίζει πίσω στο
-                    # ταμπλό καταστρέφοντας το κατεστραμμένο πλοίο απο την προσωρινή μνήμη
-                    HIT = False
-                    del battleships[CPU_random_choice_if_hit[0]]
+            # Αλγόριθμος πυρών του εχθρού σε εύκολη δυσκολία
+            if DIFFICULTY == "easy":
+                # Εδώ γίνεται έλεγχος άν οι συντεταγμένες που επιλέγει ο εχθρός ανήκουν σε κάποιο
+                # από τα πλοία του παίχτη.
+                if not HIT:
+                    # Αν δεν έχει χτυπηθεί κάποιο πλοίο, ο υπολογιστής παίρνει γενικά τυχαίες συντεταγμένες
+                    # από το ταμπλό
                     enemy_choice = random.choice(CPU_random_choice)
-
-            # Αν δεν έχει χτυπηθεί στην προηγούμενη βολή κάποιο πλοίο, τότε γίνεται έλεγχος αν η επιλεγμένες
-            # συντεταγμένες αντιστοιχούν σε κάποιο απο τα πλοία.
-            # Αν ανήκει, δημιουργείται μία προσωρινή λίστα συντεταγμένων κοντά στο χτυπημένο πλοίο απο τις
-            # οποίες θα επιλέγει ο υπολογιστής μέχρι να εξαντληθούν.
-            if not HIT:
-                for ship in battleships.keys():
-                    for ship_coords in battleships[ship][2].coordinates:
-                        if enemy_choice == ship_coords:
-                            friendly_right_wrong_labels[0].append(enemy_choice)
-                            CPU_random_choice_if_hit[1] = battleships[ship][2].coordinates + battleships[ship][2].adjacent_coordinates
-                            i = 0
-                            while i < len(CPU_random_choice_if_hit[1]):
-                                if CPU_random_choice_if_hit[1][i] not in CPU_random_choice:
-                                    CPU_random_choice_if_hit[1].remove(CPU_random_choice_if_hit[1][i])
-                                else:
-                                    i += 1
-                            CPU_random_choice_if_hit[0] = ship
-                            CPU_random_choice_if_hit[1].remove(enemy_choice)
-                            HIT = True
-                            CPU_random_choice.remove(enemy_choice)
-                            PC_SCORE += 1
-                            break
-            # Αν έχει χτυπηθεί στην προηγούμενη βολή κάποιο πλοίο, τότε γίνεται έλεγχος αν η επιλεγμένες
-            # συντεταγμένες απο την προσωρινή μνήμη αντιστοιχούν σε κάποιο κομμάτι του πλοίου.
-            else:
-                if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
-                    friendly_right_wrong_labels[0].append(enemy_choice)
-                    CPU_random_choice.remove(enemy_choice)
-                    CPU_random_choice_if_hit[1].remove(enemy_choice)
-                    PC_SCORE += 1
                 else:
-                    friendly_right_wrong_labels[1].append(enemy_choice)
-                    CPU_random_choice.remove(enemy_choice)
-                    CPU_random_choice_if_hit[1].remove(enemy_choice)
+                    # Αν χτυπηθεί κάποιο πλοίο τότε ο υπολογιστής παίρνει τυχαία κάποια απο τις συντεταγμένες
+                    # που αποτελούν τη θέση του πλοίου και του γύρο χώρου του
+                    if CPU_random_choice_if_hit[1]:
+                        enemy_choice = random.choice(CPU_random_choice_if_hit[1])
+                    else:
+                        # Αν δεν υπάρχουν άλλες κοντινές συντεταγμένες να επιλέξει τότε γυρίζει πίσω στο
+                        # ταμπλό καταστρέφοντας το κατεστραμμένο πλοίο απο την προσωρινή μνήμη
+                        HIT = False
+                        del battleships[CPU_random_choice_if_hit[0]]
+                        enemy_choice = random.choice(CPU_random_choice)
 
-            # Αν δέν βρεθεί συντεταγμένη πλοίου
-            if not HIT:
-                CPU_random_choice.remove(enemy_choice)
-                friendly_right_wrong_labels[1].append(enemy_choice)
+                # Αν δεν έχει χτυπηθεί στην προηγούμενη βολή κάποιο πλοίο, τότε γίνεται έλεγχος αν η επιλεγμένες
+                # συντεταγμένες αντιστοιχούν σε κάποιο απο τα πλοία.
+                # Αν ανήκει, δημιουργείται μία προσωρινή λίστα συντεταγμένων κοντά στο χτυπημένο πλοίο απο τις
+                # οποίες θα επιλέγει ο υπολογιστής μέχρι να εξαντληθούν.
+                if not HIT:
+                    for ship in battleships.keys():
+                        for ship_coords in battleships[ship][2].coordinates:
+                            if enemy_choice == ship_coords:
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1] = battleships[ship][2].coordinates + battleships[ship][2].adjacent_coordinates
+                                i = 0
+                                while i < len(CPU_random_choice_if_hit[1]):
+                                    if CPU_random_choice_if_hit[1][i] not in CPU_random_choice:
+                                        CPU_random_choice_if_hit[1].remove(CPU_random_choice_if_hit[1][i])
+                                    else:
+                                        i += 1
+                                CPU_random_choice_if_hit[0] = ship
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                HIT = True
+                                CPU_random_choice.remove(enemy_choice)
+                                PC_SCORE += 1
+                                break
+                # Αν έχει χτυπηθεί στην προηγούμενη βολή κάποιο πλοίο, τότε γίνεται έλεγχος αν η επιλεγμένες
+                # συντεταγμένες απο την προσωρινή μνήμη αντιστοιχούν σε κάποιο κομμάτι του πλοίου.
+                else:
+                    if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                        friendly_right_wrong_labels[0].append(enemy_choice)
+                        CPU_random_choice.remove(enemy_choice)
+                        CPU_random_choice_if_hit[1].remove(enemy_choice)
+                        PC_SCORE += 1
+                    else:
+                        friendly_right_wrong_labels[1].append(enemy_choice)
+                        CPU_random_choice.remove(enemy_choice)
+                        CPU_random_choice_if_hit[1].remove(enemy_choice)
+
+                # Αν δέν βρεθεί συντεταγμένη πλοίου
+                if not HIT:
+                    CPU_random_choice.remove(enemy_choice)
+                    friendly_right_wrong_labels[1].append(enemy_choice)
+            # Αλγόριθμος πυρών του εχθρού σε δύσκολη δυσκολία
+            else:
+                # Εδώ γίνεται έλεγχος άν οι συντεταγμένες που επιλέγει ο εχθρός ανήκουν σε κάποιο
+                # από τα πλοία του παίχτη.
+                if not HIT:
+                    # Αν δεν έχει χτυπηθεί κάποιο πλοίο, ο υπολογιστής παίρνει γενικά τυχαίες συντεταγμένες
+                    # από το ταμπλό
+                    enemy_choice = random.choice(CPU_random_choice)
+                else:
+                    # Αν χτυπηθεί κάποιο πλοίο τότε ο υπολογιστής βλέπει αν η θέση έχει χτυπηθεί ξανά
+                    # αλλιώς αλλάζει την κατεύθυνση της επόμενης επίθεσής του
+                    if CPU_random_choice_if_hit[1]:
+                        directions = [["up", [0, -1]], ["right", [1, 0]], ["down", [0, 1]], ["left", [-1, 0]]]
+                        y_directions = [["y_up", [0, -1]], ["y_down", [0, 1]]]
+                        x_directions = [["x_right", [1, 0]], ["x_left", [-1, 0]]]
+                        enemy_choice = CPU_smart_choice[0][:]
+                        if CPU_smart_choice[1] in ["up", "right", "down", "left"]:
+                            counter = 0
+                            enemy_choice[0] += directions[counter][1][0]
+                            enemy_choice[1] += directions[counter][1][1]
+                            while enemy_choice not in CPU_random_choice:
+                                enemy_choice = CPU_smart_choice[0][:]
+                                counter += 1
+                                enemy_choice[0] += directions[counter][1][0]
+                                enemy_choice[1] += directions[counter][1][1]
+                                CPU_smart_choice[1] = directions[counter][0]
+                        elif CPU_smart_choice[1] in ["y_up", "y_down"]:
+                            counter = 0
+                            enemy_choice[0] += y_directions[counter][1][0]
+                            enemy_choice[1] += y_directions[counter][1][1]
+                            while enemy_choice not in CPU_random_choice:
+                                enemy_choice = CPU_smart_choice[0][:]
+                                counter += 1
+                                enemy_choice[0] += y_directions[counter][1][0]
+                                enemy_choice[1] += y_directions[counter][1][1]
+                                CPU_smart_choice[1] = y_directions[counter][0]
+                        elif CPU_smart_choice[1] in ["x_right", "x_left"]:
+                            counter = 0
+                            enemy_choice[0] += x_directions[counter][1][0]
+                            enemy_choice[1] += x_directions[counter][1][1]
+                            while enemy_choice not in CPU_random_choice:
+                                enemy_choice = CPU_smart_choice[0][:]
+                                counter += 1
+                                enemy_choice[0] += x_directions[counter][1][0]
+                                enemy_choice[1] += x_directions[counter][1][1]
+                                CPU_smart_choice[1] = x_directions[counter][0]
+                        enemy_choice = CPU_smart_choice[0][:]
+                    else:
+                        # Αν δεν υπάρχουν άλλες κοντινές συντεταγμένες να επιλέξει τότε γυρίζει πίσω στο
+                        # ταμπλό καταστρέφοντας το κατεστραμμένο πλοίο απο την προσωρινή μνήμη
+                        HIT = False
+                        for coords in battleships[CPU_random_choice_if_hit[0]][2].coordinates + battleships[CPU_random_choice_if_hit[0]][2].adjacent_coordinates:
+                            for general_coords in CPU_random_choice:
+                                if general_coords == coords:
+                                    CPU_random_choice.remove(general_coords)
+                                    break
+                        del battleships[CPU_random_choice_if_hit[0]]
+                        enemy_choice = random.choice(CPU_random_choice)
+
+                # Αν δεν έχει χτυπηθεί στην προηγούμενη βολή κάποιο πλοίο, τότε γίνεται έλεγχος αν η επιλεγμένες
+                # συντεταγμένες αντιστοιχούν σε κάποιο απο τα πλοία.
+                # Αν ανήκει, δημιουργείται μία προσωρινή λίστα συντεταγμένων κοντά στο χτυπημένο πλοίο απο τις
+                # οποίες θα επιλέγει ο υπολογιστής μέχρι να εξαντληθούν.
+                if not HIT:
+                    for ship in battleships.keys():
+                        for ship_coords in battleships[ship][2].coordinates:
+                            if enemy_choice == ship_coords:
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1] = battleships[ship][2].coordinates[:]
+                                CPU_random_choice_if_hit[0] = ship
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                CPU_smart_choice[0] = enemy_choice
+                                HIT = True
+                                PC_SCORE += 1
+                                CPU_smart_choice[1] = "up"
+                                break
+                # Αν έχει χτυπηθεί στην προηγούμενη βολή κάποιο πλοίο, τότε γίνεται έλεγχος αν η επιλεγμένες
+                # συντεταγμένες απο την προσωρινή μνήμη αντιστοιχούν σε κάποιο κομμάτι του πλοίου.
+                else:
+                    # Επίσης, γίνεται για την πιθανή χωροθέτηση του πλοίου
+                    if CPU_smart_choice[1] == "up":
+                        enemy_choice[1] -= 1
+                        for coords in CPU_random_choice_if_hit[1]:
+                            if enemy_choice == coords:
+                                CPU_smart_choice[1] = "y_up"
+                                CPU_smart_choice[0] = enemy_choice
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                break
+                            else:
+                                CPU_smart_choice[1] = "right"
+                                if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                    friendly_right_wrong_labels[1].append(enemy_choice)
+                                    CPU_random_choice.remove(enemy_choice)
+                    elif CPU_smart_choice[1] == "right":
+                        enemy_choice[0] += 1
+                        for coords in CPU_random_choice_if_hit[1]:
+                            if enemy_choice == coords:
+                                CPU_smart_choice[1] = "x_right"
+                                CPU_smart_choice[0] = enemy_choice
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                break
+                            else:
+                                CPU_smart_choice[1] = "down"
+                                if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                    friendly_right_wrong_labels[1].append(enemy_choice)
+                                    CPU_random_choice.remove(enemy_choice)
+                    elif CPU_smart_choice[1] == "down":
+                        enemy_choice[1] += 1
+                        for coords in CPU_random_choice_if_hit[1]:
+                            if enemy_choice == coords:
+                                CPU_smart_choice[1] = "y_down"
+                                CPU_smart_choice[0] = enemy_choice
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                break
+                            else:
+                                CPU_smart_choice[1] = "left"
+                                if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                    friendly_right_wrong_labels[1].append(enemy_choice)
+                                    CPU_random_choice.remove(enemy_choice)
+                    elif CPU_smart_choice[1] == "left":
+                        enemy_choice[0] -= 1
+                        for coords in CPU_random_choice_if_hit[1]:
+                            if enemy_choice == coords:
+                                CPU_smart_choice[1] = "x_left"
+                                CPU_smart_choice[0] = enemy_choice
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                break
+                    elif CPU_smart_choice[1] == "y_up":
+                        enemy_choice[1] -= 1
+                        if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                            while enemy_choice not in CPU_random_choice_if_hit[1]:
+                                enemy_choice[1] -= 1
+                        for coords in CPU_random_choice_if_hit[1]:
+                            if enemy_choice == coords:
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                CPU_smart_choice[0] = enemy_choice
+                                break
+                            elif enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                CPU_smart_choice[1] = "y_down"
+                                if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                    friendly_right_wrong_labels[1].append(enemy_choice)
+                                    CPU_random_choice.remove(enemy_choice)
+                    elif CPU_smart_choice[1] == "y_down":
+                        enemy_choice[1] += 1
+                        if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                            while enemy_choice not in CPU_random_choice_if_hit[1]:
+                                enemy_choice[1] += 1
+                        for coords in CPU_random_choice_if_hit[1]:
+                            if enemy_choice == coords:
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                CPU_smart_choice[0] = enemy_choice
+                                break
+                            elif enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                CPU_smart_choice[1] = "y_up"
+                                if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                    friendly_right_wrong_labels[1].append(enemy_choice)
+                                    CPU_random_choice.remove(enemy_choice)
+                    elif CPU_smart_choice[1] == "x_right":
+                        enemy_choice[0] += 1
+                        if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                            while enemy_choice not in CPU_random_choice_if_hit[1]:
+                                enemy_choice[0] += 1
+                        for coords in CPU_random_choice_if_hit[1]:
+                            if enemy_choice == coords:
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                CPU_smart_choice[0] = enemy_choice
+                                break
+                            elif enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                CPU_smart_choice[1] = "x_left"
+                                if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                    friendly_right_wrong_labels[1].append(enemy_choice)
+                                    CPU_random_choice.remove(enemy_choice)
+                    elif CPU_smart_choice[1] == "x_left":
+                        enemy_choice[0] -= 1
+                        if enemy_choice in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                            while enemy_choice not in CPU_random_choice_if_hit[1]:
+                                enemy_choice[0] -= 1
+                        for coords in CPU_random_choice_if_hit[1]:
+                            if enemy_choice == coords:
+                                friendly_right_wrong_labels[0].append(enemy_choice)
+                                CPU_random_choice_if_hit[1].remove(enemy_choice)
+                                CPU_smart_choice[0] = enemy_choice
+                                break
+                            elif enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                CPU_smart_choice[1] = "x_right"
+                                if enemy_choice in CPU_random_choice and enemy_choice not in battleships[CPU_random_choice_if_hit[0]][2].coordinates:
+                                    friendly_right_wrong_labels[1].append(enemy_choice)
+                                    CPU_random_choice.remove(enemy_choice)
+                # Αν δέν βρεθεί συντεταγμένη πλοίου
+                if not HIT:
+                    CPU_random_choice.remove(enemy_choice)
+                    friendly_right_wrong_labels[1].append(enemy_choice)
 
             new_game(window, False, False)
 
@@ -783,7 +1002,7 @@ def new_game(window, entry_box, start_frame):
     # Ενεργοποίηση ή Απενεργοποίηση κουμπιών όπου χρειάζεται
     for ship in battleships.keys():
         if battleships[ship][0] == 0:
-            start.config(state=DISABLED)
+            ###start.config(state=DISABLED)
             ship_add.config(state=NORMAL)
             break
 
